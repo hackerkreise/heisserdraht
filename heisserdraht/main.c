@@ -12,23 +12,19 @@
 uint8_t count = 0;
 uint8_t wasted = 0;		//Zähler für den Timer
 uint8_t timerem = 0;	//Zähler der an LED_out übergeben wird
-uint8_t trys =0;		//Zähler für den Fehler Interrupt
-
+uint8_t trys =3;		//Zähler für den Fehler Interrupt
+uint8_t test= 0;		//Testen von INT0
 inline void init_ports()
 {
 	DDRA |= 0b11111011;
 	DDRB |= _BV(PB3) & ~_BV(PB6);
 	PORTB6 == 1<<PORTB6;
 	//PORTB4 == 1<<PORTB4;
-	//Definition von INT0
-	GIMSK = 1<<INT0;					// Enable INT0
+	//Definition von INT0 und INT1
+	GIMSK = 11000000;					// Enable INT0 und INT1
 	MCUCR = 1<<ISC01 | 1<<ISC00;	// Trigger INT0 on rising edge
+	MCUCR = 1<<ISC01 | 1>>ISC00;	//Trigger INT1 on falling Edge
 	
-	//Enable INT1
-	GIMSK = 1<<INT1;
-	MCUCR = 1<<ISC01 | 1>>ISC00;	//Trigfger NT1 on falling Edge
-	
-    //Hier kommt der Timer erventuell wieder hin
 	sei();				//Enable Global Interrupt
 
 }
@@ -71,11 +67,11 @@ int main ()
 				if (wasted >= 32) //Zeit die für das Spiel vorhanden ist festlegen.
 				{
 					wasted = 31;
-					trys = 10; //Nach Ablauf der Zeit Wechsel in den Case loose(=10) erzwingen
+					trys = 1; //Nach Ablauf der Zeit Wechsel in den Case loose(=10) erzwingen
 				}
-				if (trys == 10)
+				if (trys >9)
 				{
-					trys = 10; //Nachdem zehnten Versuch soll das Board in den loose state gehen.
+					trys = 1; //Nachdem zehnten Versuch soll das Board in den loose state gehen.
 				}
 				_delay_ms(20);
 				LED_out(wasted);
@@ -96,19 +92,19 @@ void seg_out(uint8_t out)//Ansteuerung des 7 Segment Displays
 
 	switch(out)
 	{
-		case   0:	PORTA |= 0b00000001; break;
-		case   1:	PORTA |= 0b10011111; break;
-		case   2:	PORTA |= 0b00100010; break;
-		case   3:	PORTA |= 0b00001110; break;
-		case   4:	PORTA |= 0b10011000; break;
-		case   5:	PORTA |= 0b01001000; break;
-		case   6:	PORTA |= 0b01000000; break;
-		case   7:	PORTA |= 0b00011101; break;
-		case   8:	PORTA |= 0b00000000; break;
-		case   9:	PORTA |= 0b00001000; break;
-		case   10:	PORTA |= 0b01101010; break; // loose
-		case   11:	PORTA |= 0b10010001; break; //pre start
-		case   12:	PORTA |= 0b11000011; break; //win
+		case   3:	PORTA |= 0b00000001; break;		//=0
+		case   4:	PORTA |= 0b10011111; break;		//=1
+		case   5:	PORTA |= 0b00100010; break;		//=2
+		case   6:	PORTA |= 0b00001110; break;		//=3
+		case   7:	PORTA |= 0b10011000; break;		//=4
+		case   8:	PORTA |= 0b01001000; break;		//=5
+		case   9:	PORTA |= 0b01000000; break;		//=6
+		case   10:	PORTA |= 0b00011101; break;		//=7
+		case   11:	PORTA |= 0b00000000; break;		//=8
+		case   12:	PORTA |= 0b00001000; break;		//=9
+		case   1:	PORTA |= 0b01101010; break; // loose
+		case   0:	PORTA |= 0b10010001; break; //pre start
+		case   2:	PORTA |= 0b11000011; break; //win
 		default:;
 		//An dieser Stelle hat mir das hier sehr geholfen: http://www.mikrocontroller.net/articles/AVR-Tutorial:_7-Segment-Anzeige
 	}
@@ -132,9 +128,8 @@ ISR(TIMER0_OVF_vect){// Setzt den Timer zurück nach jeder Sekunde und zählt die 
 
 ISR(INT0_vect){ //Interrupt für den BUtton
 	_delay_ms(100);
-	seg_out(11);
-	_delay_ms(1000);
-	trys++;
+	seg_out(0); //Ausgabe des Startsignals
+	_delay_ms(10000); //Zeit zum reset geben
+	trys = 3;
 	wasted = 0;
-	
 }
