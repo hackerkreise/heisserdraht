@@ -17,9 +17,9 @@ uint8_t test= 0;		//Testen von INT0
 inline void init_ports()
 {
 	DDRA |= 0b11111011;
-	DDRB |= _BV(PB3) & ~_BV(PB6);
+	DDRB |= _BV(PB3) & ~_BV(PB6);// & ~_BV(PB4); DDRB4 mus eins gesetzt sein, damit OUtput möglich ist.
 	PORTB6 == 1<<PORTB6;
-	//PORTB4 == 1<<PORTB4;
+	//PORTB4 == 1;				//Sollte den Lautsprecher aktivieren. Funktioniert noch nicht (TESTING)
 	//Definition von INT0 und INT1
 	GIMSK = 11000000;					// Enable INT0 und INT1
 	MCUCR = 1<<ISC01 | 1<<ISC00;	// Trigger INT0 on rising edge

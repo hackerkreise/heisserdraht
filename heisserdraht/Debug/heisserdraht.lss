@@ -220,10 +220,10 @@ inline void init_ports()
  100:	8a b3       	in	r24, 0x1a	; 26
  102:	8b 6f       	ori	r24, 0xFB	; 251
  104:	8a bb       	out	0x1a, r24	; 26
-	DDRB |= _BV(PB3) & ~_BV(PB6);
+	DDRB |= _BV(PB3) & ~_BV(PB6) & ~_BV(PB4);
  106:	bb 9a       	sbi	0x17, 3	; 23
 	PORTB6 == 1<<PORTB6;
-	//PORTB4 == 1<<PORTB4;
+	PORTB4 == 1;
 	//Definition von INT0 und INT1
 	GIMSK = 11000000;					// Enable INT0 und INT1
  108:	80 ec       	ldi	r24, 0xC0	; 192
