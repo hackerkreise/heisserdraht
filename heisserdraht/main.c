@@ -9,17 +9,21 @@
 #include <util/delay.h>
 #define F_CPU 8000000
 
+
+
 uint8_t count = 0;
 uint8_t wasted = 0;		//Zähler für den Timer
 uint8_t timerem = 0;	//Zähler der an LED_out übergeben wird
 uint8_t trys =3;		//Zähler für den Fehler Interrupt
 uint8_t test= 0;		//Testen von INT0
+
+
 inline void init_ports()
 {
 	DDRA |= 0b11111011;
-	DDRB |= _BV(PB3) & ~_BV(PB6);// & ~_BV(PB4); In DDRB muss DDB4 logisch EINS gesetzt sein, damit Output möglich ist.
+	DDRB |= _BV(PB3) & ~_BV(PB6); //& _BV(PB4); // In DDRB muss DDB4 logisch EINS gesetzt sein, damit Output möglich ist.
 	PORTB6 == 1<<PORTB6;
-	//PORTB4 == 1;				//Sollte den Lautsprecher aktivieren. Funktioniert noch nicht (TESTING)
+	PORTB4 == 1<<PORTB4;				//Lautsprecherport aktivieren
 	//Definition von INT0 und INT1
 	GIMSK = 11000000;					// Enable INT0 und INT1
 	MCUCR = 1<<ISC01 | 1<<ISC00;	// Trigger INT0 on rising edge
@@ -71,7 +75,7 @@ int main ()
 				}
 				if (trys >9)
 				{
-					trys = 1; //Nachdem zehnten Versuch soll das Board in den loose state gehen.
+					trys = 1; //Nachdem  zehnten Versuch soll das Board in den loose state gehen.
 				}
 				_delay_ms(20);
 				LED_out(wasted);
@@ -81,7 +85,7 @@ int main ()
 				
 			}  //for j
 		}// for i
-	} // while
+	} // while 
 
 }
 
@@ -111,9 +115,33 @@ void seg_out(uint8_t out)//Ansteuerung des 7 Segment Displays
 
 }
 
+#define BUZZER_DELAY    80     // Delay for each tick, quasi Frequenz einstellen.
+
+void buzzer ()
+{
+	int count = 150;
+	while(count !=0)
+	{
+		for(int i=0; i <= BUZZER_DELAY; i++)
+		{
+		
+	PORTB |= (1 << PORTB4);
+	_delay_us(BUZZER_DELAY);
+	PORTB &= ~(1 << PORTB4);
+	_delay_us(BUZZER_DELAY);
+		}
+		
+	_delay_ms(10);
+	--count;
+	
+	}
+	
+}
+
 
 ISR(INT1_vect){// Interrupt für Berührung der Drähte.
-	_delay_ms(100);
+	buzzer();
+	_delay_ms(200);
 	trys++;
 	
 }
@@ -124,6 +152,9 @@ ISR(TIMER0_OVF_vect){// Setzt den Timer zurück nach jeder Sekunde und zählt die 
 	TCNT0L = (0x10000 - (8000000 / 256)+1) % 256;
 	wasted++; 
 }
+
+
+
 
 
 ISR(INT0_vect){ //Interrupt für den BUtton
