@@ -17,7 +17,6 @@ uint8_t timerem = 0;	//Zähler der an LED_out übergeben wird
 uint8_t trys =3;		//Zähler für den Fehler Interrupt
 uint8_t test= 0;		//Testen von INT0
 
-
 inline void init_ports()
 {
 	DDRA |= 0b11111011;
@@ -40,54 +39,27 @@ void LED_out(uint8_t out)//Hier werden die LEDs aufgesetzt, ein Integer im Timer
 	PORTA |= out<<3;
 }
 
-
-
-int main ()
+void buzzer (int BUZZER_DELAY)
 {
-	init_ports();
-	//Enable TIMER1
-	TCCR0A |= _BV(TCW0);							//Timer auf 16Bit setzen avr Manual S.83
-	TCNT0H = (0x10000 - (8000000 / 256)) / 256;		//Zähler vorladen
-	TCNT0L = (0x10000 - (8000000 / 256)) % 256;
-	
-	TCCR0B |= _BV(CS02);							//Setzen des Prescalers auf 256 (S.84)
-
-	TIMSK |= _BV(TOIE0);							//Overflowbit setzen
-		
-		
-
-	while(1)
-	{	
-		if (wasted % 4 == 0) //Dafür sorgen das nur Werte durch 4 Teilbar sind an LED_out() übergeben werden
+	int count = 100;
+	while(count !=0)
+	{
+		for(int i=0; i <= BUZZER_DELAY; i++)
 		{
-			timerem = wasted;
+		
+	PORTB |= (1 << PORTB4);
+	_delay_us(100);
+	PORTB &= ~(1 << PORTB4);
+	_delay_us(100);
 		}
 		
-		for (uint8_t i = 0; i<=100; i++)
-		{
-			
-			for (uint8_t j = 0; j<100; j++)
-			{
-				if (wasted >= 32) //Zeit die für das Spiel vorhanden ist festlegen.
-				{
-					wasted = 31;
-					trys = 1; //Nach Ablauf der Zeit Wechsel in den Case loose(=10) erzwingen
-				}
-				if (trys >9)
-				{
-					trys = 1; //Nachdem  zehnten Versuch soll das Board in den loose state gehen.
-				}
-				_delay_ms(20);
-				LED_out(wasted);
-
-				_delay_ms(20);
-				seg_out(trys);
-				
-			}  //for j
-		}// for i
-	} // while 
-
+	_delay_ms(10);
+	--count;
+	
+	}
+	
 }
+
 
 void seg_out(uint8_t out)//Ansteuerung des 7 Segment Displays
 {
@@ -115,32 +87,13 @@ void seg_out(uint8_t out)//Ansteuerung des 7 Segment Displays
 
 }
 
-#define BUZZER_DELAY    80     // Delay for each tick, quasi Frequenz einstellen.
+#define BUZZER_DELAY 80    // Delay for each tick, quasi Frequenz einstellen.
 
-void buzzer ()
-{
-	int count = 150;
-	while(count !=0)
-	{
-		for(int i=0; i <= BUZZER_DELAY; i++)
-		{
-		
-	PORTB |= (1 << PORTB4);
-	_delay_us(BUZZER_DELAY);
-	PORTB &= ~(1 << PORTB4);
-	_delay_us(BUZZER_DELAY);
-		}
-		
-	_delay_ms(10);
-	--count;
-	
-	}
-	
-}
+
 
 
 ISR(INT1_vect){// Interrupt für Berührung der Drähte.
-	buzzer();
+	buzzer(80);
 	_delay_ms(200);
 	trys++;
 	
@@ -158,9 +111,61 @@ ISR(TIMER0_OVF_vect){// Setzt den Timer zurück nach jeder Sekunde und zählt die 
 
 
 ISR(INT0_vect){ //Interrupt für den BUtton
+	buzzer(150);
+	buzzer(200);
+	buzzer(50);
+	
 	_delay_ms(100);
 	seg_out(0); //Ausgabe des Startsignals
 	_delay_ms(10000); //Zeit zum reset geben
 	trys = 3;
 	wasted = 0;
+}
+
+
+int main ()
+{
+	init_ports();
+	//Enable TIMER1
+	TCCR0A |= _BV(TCW0);							//Timer auf 16Bit setzen avr Manual S.83
+	TCNT0H = (0x10000 - (8000000 / 256)) / 256;		//Zähler vorladen
+	TCNT0L = (0x10000 - (8000000 / 256)) % 256;
+	
+	TCCR0B |= _BV(CS02);							//Setzen des Prescalers auf 256 (S.84)
+
+	TIMSK |= _BV(TOIE0);							//Overflowbit setzen
+	
+	
+
+	while(1)
+	{
+		if (wasted % 4 == 0) //Dafür sorgen das nur Werte durch 4 Teilbar sind an LED_out() übergeben werden
+		{
+			timerem = wasted;
+		}
+		
+		for (uint8_t i = 0; i<=100; i++)
+		{
+			
+			for (uint8_t j = 0; j<100; j++)
+			{
+				if (wasted >= 32) //Zeit die für das Spiel vorhanden ist festlegen.
+				{
+					wasted = 31;
+					trys = 1; //Nach Ablauf der Zeit Wechsel in den Case loose(=10) erzwingen
+				}
+				if (trys >9)
+				{
+					trys = 1; //Nachdem  zehnten Versuch soll das Board in den loose state gehen.
+				}
+				_delay_ms(20);
+				LED_out(wasted);
+
+				_delay_ms(20);
+				seg_out(trys);
+				
+			}  //for j
+		}// for i
+	} // while
+
 }
